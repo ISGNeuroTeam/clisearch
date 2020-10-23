@@ -1,0 +1,2 @@
+# clisearch
+CLI Search utility
