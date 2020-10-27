@@ -6,7 +6,7 @@ import sys
 
 def get_logger(out, loglevel, reinit=False):
     cfg = None
-    logger = logging.getLogger('clisearch')
+    logger = logging.getLogger(None)
     if reinit:
         for h in logger.handlers:
             logger.removeHandler(h)
