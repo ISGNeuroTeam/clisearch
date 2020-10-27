@@ -15,7 +15,7 @@ from lib_clisearch.query import OTPQuery
 __author__ = "Alexander Matiakubov"
 __copyright__ = "Copyright 2020, ISG Neuro"
 __license__ = "LICENSE.md"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __maintainer__ = "Alexander Matiakubov"
 __email__ = "ma@makuba.ru"
 __status__ = "Development"
