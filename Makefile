@@ -7,60 +7,91 @@ Required section:
 Addition section:
 endef
 
-PROJECT_NAME=otp_benchmarks
-VERSION=0.0.1
+PROJECT_NAME=clisearch
 
-#GENERATE_VERSION = $(shell jq .version ./${PROJECT_NAME}/package.json )
+BASE_DIST_URL := http://192.168.4.178:8089/releases
+
+ot_simple_connector_URL := $(BASE_DIST_URL)/ot_simple_connector/master/ot_simple_connector-0.1.1-master.tar.gz
+
+tmp_path := tmp
+
+GENERATE_VERSION = $(shell cat clisearch/clisearch.py | grep __version__ | head -n 1 | sed -re 's/[^"]+//' | sed -re 's/"//g' )
 GENERATE_BRANCH = $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
 
-#SET_VERSION = $(eval VERSION=$(GENERATE_VERSION))
+SET_VERSION = $(eval VERSION=$(GENERATE_VERSION))
 SET_BRANCH = $(eval BRANCH=$(GENERATE_BRANCH))
 
 #.SILENT:
 
-COMPONENTS :
+COMPONENTS := ot_simple_connector
+
+define GetPack
+	@echo "Getting archive for $(1) and unpack"
+	mkdir -p $(tmp_path)/$(1) && curl $($(1)_URL) | tar zxv --directory=$(tmp_path)/$(1)
+endef
 
 export ANNOUNCE_BODY
 all:
 	echo "$$ANNOUNCE_BODY"
 
-pack: create_sfx
+pack: make_build
 	$(SET_BRANCH)
 	#$(SET_VERSION)
 	echo Create archive \"$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz\"
 	@#cd build; tar czf ../$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz $(PROJECT_NAME)*.run
-	tar czf $(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz $(PROJECT_NAME)*.run ReadMe.txt
+	cd make_build; tar czf ../$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz clisearch
 
-build: $(COMPONENTS) venv
+build: make_build
+
+make_build: $(COMPONENTS:%=$(tmp_path)/%) dist venv
 	# required section
-	@echo Build!
-	mkdir build
-	mkdir build/$(PROJECT_NAME)
-	cp -r ./venv ./build/$(PROJECT_NAME)
-	cp -r ./$(PROJECT_NAME)/* ./build/$(PROJECT_NAME)
-	mv ./build/$(PROJECT_NAME)/benchmark.cfg ./build/$(PROJECT_NAME)/benchmark.cfg.example
-	git lfs fetch
-	cp dataset/benchmark_index_single_bucket_single_parquet_file.tar.gz dataset/benchmark_index_many_bucket_many_parquet_file_small.tar.gz dataset/benchmark_index_many_bucket_many_parquet_file_normal.tar.gz ./build
-	cp README.md build/$(PROJECT_NAME)/
-	cp CHANGELOG.md build/$(PROJECT_NAME)/
-	cp LICENSE.md build/$(PROJECT_NAME)/
+	@echo make_build!
+	mkdir make_build
+	mkdir make_build/$(PROJECT_NAME)
+	cp dist/clisearch make_build/$(PROJECT_NAME)
+	cp clisearch/clisearch.cfg make_build/$(PROJECT_NAME)/clisearch.cfg.example
+#	cp -r ./$(PROJECT_NAME)/* ./build/$(PROJECT_NAME)
+#	mv ./build/$(PROJECT_NAME)/benchmark.cfg ./build/$(PROJECT_NAME)/benchmark.cfg.example
+#	cp README.md build/$(PROJECT_NAME)/
+#	cp CHANGELOG.md build/$(PROJECT_NAME)/
+	cp LICENSE.md make_build/$(PROJECT_NAME)/
+
+$(tmp_path)/ot_simple_connector:
+	$(call GetPack,$(@:$(tmp_path)/%=%))
+
+clisearch/ot_simple_connector: $(tmp_path)/ot_simple_connector
+	cp -r $(tmp_path)/ot_simple_connector/ot_simple_connector clisearch/ot_simple_connector
+
+
+dist: clisearch/ot_simple_connector  venv
+	#./venv/bin/pyinstaller --runtime-tmpdir ./tmp --hidden-import=_cffi_backend -F clisearch/clisearch.py
+	./venv/bin/pyinstaller --hidden-import=_cffi_backend -F clisearch/clisearch.py
 
 venv:
 	echo Create venv
-	mkdir -p /opt/otp/otp_benchmarks
-	python3 -m venv --copies /opt/otp/otp_benchmarks/venv
-	/opt/otp/otp_benchmarks/venv/bin/pip3 install -r requirements.txt
-	cp -r /opt/otp/otp_benchmarks/venv venv
+	#mkdir -p /opt/otp/otp_benchmarks
+	#python3 -m venv --copies /opt/otp/otp_benchmarks/venv
+	python3 -m venv --copies ./venv
+	./venv/bin/pip3 install -r requirements.txt
+	#cp -r /opt/otp/otp_benchmarks/venv venv
 
-clean:
+clean: $(COMPONENTS:%=.clean.%)
 	# required section"
 	find . -type d -name '*pycache*' -not -path '*venv*' | xargs rm -rf
-	rm -rf build $(PROJECT_NAME)-*.tar.gz $(PROJECT_NAME)-*.run venv /opt/otp/otp_benchmarks/venv
+	rm -rf build $(PROJECT_NAME)-*.tar.gz  venv make_build tmp clisearch/ot_simple_connector dist *.spec
 
-test:
-	# required section
-	@echo "Testing..."
-	@#echo $(PROJECT_NAME)
+.clean.ot_simple_connector:
+	rm -rf $(tmp_path)/$(@:.clean.%=%)
+
+test: venv
+	echo "Testing..."
+	export PYTHONPATH=./clisearch/:./tests/; ./venv/bin/python -m unittest
+
+clean_test: clean_venv
+	echo "Cleaning after test..."
+
+
+
 
 create_sfx: build
 	@echo $@
