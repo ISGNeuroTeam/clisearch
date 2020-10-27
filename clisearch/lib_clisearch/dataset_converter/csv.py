@@ -6,11 +6,10 @@ import io
 import re
 
 class CSV:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def convert(self, dataset):
-        self.logger.debug('Converting dataset to csv...')
+    @staticmethod
+    def convert(dataset):
+        logger = logging.getLogger(__name__)
+        logger.debug('Converting dataset to csv...')
         data = io.StringIO()
         writer = csv.writer(data, delimiter=',')
 

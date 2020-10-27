@@ -13,10 +13,10 @@ class DatasetConverter:
         self.logger.debug("Creating DatasetConverter instance")
 
     def get_csv(self):
-        return CSV().convert(self.dataset)
+        return CSV.convert(self.dataset)
 
     def get_json(self):
-        return JSON().convert(self.dataset)
+        return JSON.convert(self.dataset)
 
     def print_csv(self):
         self.logger.debug("Printing dataset as CSV")

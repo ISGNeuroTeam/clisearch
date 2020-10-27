@@ -6,11 +6,10 @@ import re
 
 
 class JSON:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-    def convert(self, dataset):
-        self.logger.debug('Converting dataset to json...')
+    @staticmethod
+    def convert(dataset):
+        logger = logging.getLogger(__name__)
+        logger.debug('Converting dataset to json...')
         header_fields = re.findall(r'`(.+?)`', dataset.schema)
         line = dataset.next()
         yield '['

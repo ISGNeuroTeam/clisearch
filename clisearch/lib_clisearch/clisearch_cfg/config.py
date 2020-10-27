@@ -51,7 +51,7 @@ class Config(configparser.ConfigParser):
             for key in self.__predefined[section]:
                 value = self.__predefined[section][key]
 
-                if 'replace' in value:
+                if 'replace' in value and not value['replace'] is None:
                     self.set(section, key, str(value['replace']))
                     self.logger.debug('Section "{}", key "{}", set replace value "{}"'.
                                       format(section, key, str(value['replace'])))
