@@ -11,7 +11,7 @@ PROJECT_NAME=clisearch
 
 BASE_DIST_URL := http://192.168.4.178:8089/releases
 
-ot_simple_connector_URL := $(BASE_DIST_URL)/ot_simple_connector/master/ot_simple_connector-0.1.1-master.tar.gz
+ot_simple_connector_URL := $(BASE_DIST_URL)/ot_simple_connector/master/ot_simple_connector-0.1.1-master-specialfix.tar.gz
 
 tmp_path := tmp
 

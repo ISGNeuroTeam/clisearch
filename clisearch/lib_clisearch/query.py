@@ -43,7 +43,7 @@ class OTPQuery:
                               user=self.cfg.get('main', 'username'),
                               password=self.cfg.get('main', 'password'),
                               ssl=self.cfg.getboolean('main', 'ssl', fallback=False),
-                              loglevel='DEBUG')
+                              loglevel=self.cfg.get('main', 'loglevel').upper())
 
         self.logger.debug("Creating job instance")
         job = connector.jobs.create(**job_params)

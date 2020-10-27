@@ -5,6 +5,7 @@
 import os
 import argparse
 import re
+import sys
 
 import lib_clisearch.clisearch_cfg as config
 import lib_clisearch.clisearch_logger as cs_logger
@@ -31,7 +32,7 @@ def get_args():
     parser.add_argument('--tlast', type=int, help='Time in seconds from current time')
     parser.add_argument('--sid', type=str, help='Search ID')
     parser.add_argument('--loglevel', choices=['debug', 'info', 'warning', 'error', 'critical'], help='Select loglevel')
-    parser.add_argument('--logoutput', type=str, help='Logger output destination (STDERR, STDOUT, NULL or filename')
+    parser.add_argument('--logoutput', type=str, help='Logger output destination (STDERR, STDOUT, NULL or filename)')
     parser.add_argument('--output', choices=['csv', 'json'], help='Select output type')
     parser.add_argument('--query', type=str, required=True, help='OTL query text')
 
@@ -60,9 +61,10 @@ def get_config(args):
     cfg.additem(key='port', section='main', defined=True, type='uint')
     cfg.additem(key='ssl', section='main', default=False, type='boolean')
 
-    cfg.additem(key='loglevel', section='main', default=args.loglevel, defined=False, type='text_re',
+    cfg.additem(key='loglevel', section='main', default='info', replace=args.loglevel, defined=False, type='text_re',
                 func_check=lambda x: re.search('^(debug|info|warning|error|critical)$', x, re.IGNORECASE))
-    cfg.additem(key='logoutput', section='main', default=args.logoutput, defined=False, type='text_re',
+    cfg.additem(key='logoutput', section='main', default='STDERR', replace=args.logoutput, defined=False,
+                type='text_re',
                 func_check=lambda x: re.search('^(STDOUT|STDERR|.+)$', x))
 
     cfg.additem(key='ttl', section='main', default=60, type='uint', replace=args.ttl)
@@ -85,17 +87,16 @@ def main():
 
     if args.config == 'clisearch.cfg':
         args.config = os.path.abspath('clisearch.cfg')
-    elif not (os.path.exists(args.config) and os.path.isfile(args.config)):
+    if not (os.path.exists(args.config) and os.path.isfile(args.config)):
         print("File '{}' not exist or not regular file".format(args.config))
-        quit(255)
+        sys.exit(255)
 
-    cfg = None
     try:
         cfg = get_config(args)
     except:
         logger.critical("Unexpected error", exc_info=True)
         print('exception')
-        quit(255)
+        sys.exit(255)
 
     logger = cs_logger.get_logger(cfg.get('main', 'logoutput'), cfg.get('main', 'loglevel'), reinit=True)
     logger.info("Started CLI search utility, version {}, loglevel {}".format(__version__, cfg.get('main', 'loglevel')))
@@ -112,7 +113,7 @@ def main():
     except:
         logger.critical("Unexpected error", exc_info=True)
         print('exception')
-        quit(255)
+        sys.exit(255)
 
     logger.info("Finished CLI search utility")
 
