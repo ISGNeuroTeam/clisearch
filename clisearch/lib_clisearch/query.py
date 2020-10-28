@@ -16,7 +16,7 @@ class OTPQuery:
             'query_text': self.cfg.get('main', 'query'),
             'cache_ttl': self.cfg.get('main', 'ttl')
         }
-        if self.cfg.get('main', 'tlast'):
+        if self.cfg.get('main', 'tlast') and int(self.cfg.get('main', 'tlast')) > 0:
             self.logger.debug("Found time last argument, with value {}".format(self.cfg.get('main', 'tlast')))
             job_params['tws'] = int(time.time()) - int(self.cfg.get('main', 'tlast'))
         else:
