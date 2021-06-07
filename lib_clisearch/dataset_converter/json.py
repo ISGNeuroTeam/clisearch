@@ -15,6 +15,5 @@ class JSON:
         yield '['
         yield library_json.dumps(dict(map(lambda field: (field, str(line.get(field))), header_fields)))
         for line in dataset:
-            yield ', '
-            yield library_json.dumps(dict(map(lambda field: (field, str(line.get(field))), header_fields)))
+            yield ', ' + library_json.dumps(dict(map(lambda field: (field, str(line.get(field))), header_fields)))
         yield ']'
