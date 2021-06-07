@@ -8,8 +8,14 @@ Show utility help, use `-h` key and enjoy...
 python 3.6+
 
 ### Installing
-Unpack build archive.
-Create configuration file from example.
+You have two options:
+1) Install via pip with our internal repo:
+`pip install clisearch --extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com clisearch
+`
+   
+Pip will do everything needed. You just only have to edit config file placed in your venv's root dir.
+
+2) Clone this repo, make build and use binary executable 
 
 ## Running the tests
 ```
