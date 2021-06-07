@@ -79,14 +79,15 @@ def main():
     # logger = cs_logger.get_logger(args.logoutput, args.loglevel)
 
     if args.config == 'clisearch.cfg':
-        config = Path('./', 'clisearch.cfg')
-        if not config.exists():
+        config_file = Path('./', 'clisearch.cfg')
+        if not config_file.exists():
             env_path = os.environ.get('VIRTUAL_ENV', sys.executable)
-            config = Path(env_path, 'clisearch.cfg')
-            if not config.exists():
-                print("File '{}' not exist or not regular file".format(args.config))
+            config_file = Path(env_path, 'clisearch.cfg')
+            if not config_file.exists():
+                print("File '{}' does not exist or is not a mc"
+                      "regular file".format(args.config))
                 sys.exit(255)
-        args.config = config
+        args.config = config_file
 
 
     try:
