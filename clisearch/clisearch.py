@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 import os
 import argparse
 import re
 import sys
+from pathlib import Path
 
 import lib_clisearch.clisearch_cfg as config
 import lib_clisearch.clisearch_logger as cs_logger
 import lib_clisearch.dataset_converter as dc
 from lib_clisearch.query import OTPQuery
-
-__author__ = "Alexander Matiakubov"
-__copyright__ = "Copyright 2020, ISG Neuro"
-__license__ = "LICENSE.md"
-__version__ = "0.1.0"
-__maintainer__ = "Alexander Matiakubov"
-__email__ = "ma@makuba.ru"
-__status__ = "Development"
+from . import __version__
 
 
 def get_args():
@@ -86,10 +79,15 @@ def main():
     # logger = cs_logger.get_logger(args.logoutput, args.loglevel)
 
     if args.config == 'clisearch.cfg':
-        args.config = os.path.abspath('clisearch.cfg')
-    if not (os.path.exists(args.config) and os.path.isfile(args.config)):
-        print("File '{}' not exist or not regular file".format(args.config))
-        sys.exit(255)
+        config = Path('./', 'clisearch.cfg')
+        if not config.exists():
+            env_path = os.environ.get('VIRTUAL_ENV', sys.executable)
+            config = Path(env_path, 'clisearch.cfg')
+            if not config.exists():
+                print("File '{}' not exist or not regular file".format(args.config))
+                sys.exit(255)
+        args.config = config
+
 
     try:
         cfg = get_config(args)

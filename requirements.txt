@@ -1,2 +1,5 @@
 requests>=2.23.0
 pyinstaller>=3.6
+ot-simple-connector>=0.1.7
+--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple
+--trusted-host s.dev.isgneuro.com
