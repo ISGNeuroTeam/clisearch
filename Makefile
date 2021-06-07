@@ -23,8 +23,6 @@ SET_BRANCH = $(eval BRANCH=$(GENERATE_BRANCH))
 
 #.SILENT:
 
-COMPONENTS := ot_simple_connector
-
 define GetPack
 	@echo "Getting archive for $(1) and unpack"
 	mkdir -p $(tmp_path)/$(1) && curl $($(1)_URL) | tar zxv --directory=$(tmp_path)/$(1)
@@ -43,7 +41,7 @@ pack: make_build
 
 build: make_build
 
-make_build: $(COMPONENTS:%=$(tmp_path)/%) dist venv
+make_build: dist venv
 	# required section
 	@echo make_build!
 	mkdir make_build
@@ -56,14 +54,7 @@ make_build: $(COMPONENTS:%=$(tmp_path)/%) dist venv
 #	cp CHANGELOG.md build/$(PROJECT_NAME)/
 	cp LICENSE.md make_build/$(PROJECT_NAME)/
 
-$(tmp_path)/ot_simple_connector:
-	$(call GetPack,$(@:$(tmp_path)/%=%))
-
-clisearch/ot_simple_connector: $(tmp_path)/ot_simple_connector
-	cp -r $(tmp_path)/ot_simple_connector/ot_simple_connector clisearch/ot_simple_connector
-
-
-dist: clisearch/ot_simple_connector  venv
+dist: venv
 	#./venv/bin/pyinstaller --runtime-tmpdir ./tmp --hidden-import=_cffi_backend -F clisearch/clisearch.py
 	./venv/bin/pyinstaller --hidden-import=_cffi_backend -F clisearch/clisearch.py
 
@@ -71,17 +62,22 @@ venv:
 	echo Create venv
 	#mkdir -p /opt/otp/otp_benchmarks
 	#python3 -m venv --copies /opt/otp/otp_benchmarks/venv
-	python3 -m venv --copies ./venv
-	./venv/bin/pip3 install -r requirements.txt
+	python3 -m venv ./venv
+	. ./venv/bin/activate
+	./venv/bin/python3 -m pip install --upgrade pip setuptools wheel
+	./venv/bin/python3 -m pip install -r requirements.txt
 	#cp -r /opt/otp/otp_benchmarks/venv venv
+
+publish: venv
+	#mv ./clisearch/clisearch.py ./clisearch/__main__.py
+	./venv/bin/python3 ./setup.py sdist bdist_wheel
+	#mv ./clisearch/__main__.py ./clisearch/clisearch.py
 
 clean: $(COMPONENTS:%=.clean.%)
 	# required section"
 	find . -type d -name '*pycache*' -not -path '*venv*' | xargs rm -rf
 	rm -rf build $(PROJECT_NAME)-*.tar.gz  venv make_build tmp clisearch/ot_simple_connector dist *.spec
 
-.clean.ot_simple_connector:
-	rm -rf $(tmp_path)/$(@:.clean.%=%)
 
 test: venv
 	echo "Testing..."
@@ -89,8 +85,6 @@ test: venv
 
 clean_test: clean_venv
 	echo "Cleaning after test..."
-
-
 
 
 create_sfx: build
