@@ -84,8 +84,7 @@ def main():
             env_path = os.environ.get('VIRTUAL_ENV', sys.executable)
             config_file = Path(env_path, 'clisearch.cfg')
             if not config_file.exists():
-                print("File '{}' does not exist or is not a mc"
-                      "regular file".format(args.config))
+                print("File '{}' does not exist or is not a regular file".format(args.config))
                 sys.exit(255)
         args.config = config_file
 
