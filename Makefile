@@ -23,8 +23,6 @@ SET_BRANCH = $(eval BRANCH=$(GENERATE_BRANCH))
 
 #.SILENT:
 
-COMPONENTS := ot_simple_connector
-
 define GetPack
 	@echo "Getting archive for $(1) and unpack"
 	mkdir -p $(tmp_path)/$(1) && curl $($(1)_URL) | tar zxv --directory=$(tmp_path)/$(1)
@@ -43,7 +41,7 @@ pack: make_build
 
 build: make_build
 
-make_build: $(COMPONENTS:%=$(tmp_path)/%) dist venv
+make_build: dist venv
 	# required section
 	@echo make_build!
 	mkdir make_build
@@ -56,16 +54,9 @@ make_build: $(COMPONENTS:%=$(tmp_path)/%) dist venv
 #	cp CHANGELOG.md build/$(PROJECT_NAME)/
 	cp LICENSE.md make_build/$(PROJECT_NAME)/
 
-$(tmp_path)/ot_simple_connector:
-	$(call GetPack,$(@:$(tmp_path)/%=%))
-
-clisearch/ot_simple_connector: $(tmp_path)/ot_simple_connector
-	cp -r $(tmp_path)/ot_simple_connector/ot_simple_connector clisearch/ot_simple_connector
-
-
 dist: venv
 	#./venv/bin/pyinstaller --runtime-tmpdir ./tmp --hidden-import=_cffi_backend -F clisearch/clisearch.py
-	./venv/bin/pyinstaller --hidden-import=_cffi_backend -F clisearch/__main__.py
+	./venv/bin/pyinstaller --hidden-import=_cffi_backend -F clisearch/clisearch.py
 
 venv:
 	echo Create venv
@@ -87,8 +78,6 @@ clean: $(COMPONENTS:%=.clean.%)
 	find . -type d -name '*pycache*' -not -path '*venv*' | xargs rm -rf
 	rm -rf build $(PROJECT_NAME)-*.tar.gz  venv make_build tmp clisearch/ot_simple_connector dist *.spec
 
-.clean.ot_simple_connector:
-	rm -rf $(tmp_path)/$(@:.clean.%=%)
 
 test: venv
 	echo "Testing..."

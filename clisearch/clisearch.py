@@ -11,7 +11,7 @@ import lib_clisearch.clisearch_cfg as config
 import lib_clisearch.clisearch_logger as cs_logger
 import lib_clisearch.dataset_converter as dc
 from lib_clisearch.query import OTPQuery
-from . import __version__
+from clisearch import __version__
 
 
 def get_args():
