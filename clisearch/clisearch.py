@@ -6,6 +6,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+import site
 
 import lib_clisearch.clisearch_cfg as config
 import lib_clisearch.clisearch_logger as cs_logger
@@ -81,7 +82,7 @@ def main():
     if args.config == 'clisearch.cfg':
         config_file = Path('./', 'clisearch.cfg')
         if not config_file.exists():
-            env_path = os.environ.get('VIRTUAL_ENV', sys.executable)
+            env_path = os.environ.get('VIRTUAL_ENV', '/usr/local')
             config_file = Path(env_path, 'clisearch.cfg')
             if not config_file.exists():
                 print("File '{}' does not exist or is not a regular file".format(args.config))
