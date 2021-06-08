@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2021-06-08
+### Fixed
+- Default config file path with system-wide installation
+
 ## [0.2.2] - 2021-06-07
 ### Added
 - New installation process via pip
@@ -15,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pip publishing
 - Requirements auto install
 
-## [0.1.2] - 2020-10-28
+## [0.1.2] - 2020-10-28 
 ### Hotfix
 - JSON formatter, broken list separator.
 

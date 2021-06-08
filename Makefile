@@ -56,6 +56,7 @@ make_build: dist venv
 
 dist: venv
 	#./venv/bin/pyinstaller --runtime-tmpdir ./tmp --hidden-import=_cffi_backend -F clisearch/clisearch.py
+	./venv/bin/python3 -m pip install pyinstaller
 	./venv/bin/pyinstaller --hidden-import=_cffi_backend -F clisearch/clisearch.py
 
 venv:

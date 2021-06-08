@@ -5,6 +5,7 @@ import clisearch
 requirements = []
 dependency_links = []
 
+
 try:
     with open('requirements.txt') as f:
         for line in f:
@@ -33,7 +34,7 @@ setup_args = dict(
     install_requires=requirements,
     dependency_links=dependency_links,
     options={"bdist_wheel": {"universal": "1"}},
-    data_files=[('./', ['clisearch/clisearch.cfg'])],
+    data_files=[('', ['clisearch/clisearch.cfg'])],
     entry_points={
         'console_scripts': [
             'clisearch=clisearch.clisearch:main',
