@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2021-06-28
+### Fixed
+- CSV formatting issue
+### Added
+- CSV separator configurable
+
 ## [0.2.3] - 2021-06-08
 ### Fixed
 - Default config file path with system-wide installation
