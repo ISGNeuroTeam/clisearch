@@ -106,7 +106,7 @@ def main():
 
         conv = dc.DatasetConverter(dataset)
         if cfg.get('main', 'output').lower() == 'csv':
-            conv.print_csv()
+            conv.print_csv(separator=cfg.get('main', 'csv separator'))
         elif cfg.get('main', 'output').lower() == 'json':
             conv.print_json()
     except:
