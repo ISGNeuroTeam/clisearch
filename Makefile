@@ -15,7 +15,7 @@ ot_simple_connector_URL := $(BASE_DIST_URL)/ot_simple_connector/master/ot_simple
 
 tmp_path := tmp
 
-GENERATE_VERSION = $(shell cat clisearch/clisearch.py | grep __version__ | head -n 1 | sed -re 's/[^"]+//' | sed -re 's/"//g' )
+GENERATE_VERSION = $(shell cat clisearch/__init__.py | grep __version__ | head -n 1 | sed -re 's/[^"]+//' | sed -re 's/"//g' )
 GENERATE_BRANCH = $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
 
 SET_VERSION = $(eval VERSION=$(GENERATE_VERSION))
@@ -34,7 +34,7 @@ all:
 
 pack: make_build
 	$(SET_BRANCH)
-	#$(SET_VERSION)
+	$(SET_VERSION)
 	echo Create archive \"$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz\"
 	@#cd build; tar czf ../$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz $(PROJECT_NAME)*.run
 	cd make_build; tar czf ../$(PROJECT_NAME)-$(VERSION)-$(BRANCH).tar.gz clisearch
