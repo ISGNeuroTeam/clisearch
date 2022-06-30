@@ -6,19 +6,20 @@ import argparse
 import re
 import sys
 from pathlib import Path
-import site
 
 import lib_clisearch.clisearch_cfg as config
 import lib_clisearch.clisearch_logger as cs_logger
 import lib_clisearch.dataset_converter as dc
 from lib_clisearch.query import OTPQuery
 from clisearch import __version__
+from lib_clisearch.super_scheduler.super_scheduler import SuperScheduler
 
 
 def get_args():
     parser = argparse.ArgumentParser(add_help=True,
                                      allow_abbrev=False,
                                      description='CLI Search utility')
+    subparsers = parser.add_subparsers()
     parser.add_argument('--config', '-c', default='clisearch.cfg', help='Configuration file')
     parser.add_argument('--ttl', type=int, help='Time to live request search')
     parser.add_argument('--tws', type=int, help='Start search time (epoch)')
@@ -29,6 +30,20 @@ def get_args():
     parser.add_argument('--logoutput', type=str, help='Logger output destination (STDERR, STDOUT, NULL or filename)')
     parser.add_argument('--output', choices=['csv', 'json'], help='Select output type')
     parser.add_argument('--query', type=str, required=True, help='OTL query text')
+
+    # schedule subparsers
+    schedule_parsers = {}
+
+    crontab_schedule_name = 'crontab'
+    crontab_parser = subparsers.add_parser(crontab_schedule_name)
+    schedule_parsers[crontab_schedule_name] = crontab_parser
+    crontab_parser.add_argument('--minute', type=str, help=f'Default \'*\'', default='*')
+    crontab_parser.add_argument('--hour', type=str, help=f'Default \'*\'', default='*')
+    crontab_parser.add_argument('--day_of_week', type=str, help=f'Default \'*\'', default='*')
+    crontab_parser.add_argument('--day_of_month', type=str, help=f'Default \'*\'', default='*')
+    crontab_parser.add_argument('--month_of_year', type=str, help=f'Default \'*\'', default='*')
+    crontab_parser.add_argument('--schedule_name', type=str, help=f"Schedule name; default '{crontab_schedule_name}'",
+                                default=crontab_schedule_name)
 
     # parser.add_argument('--ttl', default=60, type=int, help='Time to live request search')
     # parser.add_argument('--tws', default=0, type=int, help='Start search time (epoch)')
@@ -41,7 +56,11 @@ def get_args():
     #                     help='Logger output destination (STDERR, STDOUT, NULL or filename')
     # parser.add_argument('--output', default='csv', choices=['csv', 'json'], help='Select output type')
     # parser.add_argument('--query', type=str, required=True, help='OTL query text')
-    return parser.parse_args()
+
+    args = parser.parse_args()
+    schedule = SuperScheduler.get_schedule(args, schedule_parsers)
+
+    return args, schedule
 
 
 def get_config(args):
@@ -74,7 +93,7 @@ def get_config(args):
 
 
 def main():
-    args = get_args()
+    args, schedule = get_args()
     logger = cs_logger.get_logger('STDERR' if args.logoutput is None else args.logoutput,
                                   'CRITICAL' if args.loglevel is None else args.loglevel)
     # logger = cs_logger.get_logger(args.logoutput, args.loglevel)
@@ -89,7 +108,6 @@ def main():
                 sys.exit(255)
         args.config = config_file
 
-
     try:
         cfg = get_config(args)
     except:
@@ -100,19 +118,23 @@ def main():
     logger = cs_logger.get_logger(cfg.get('main', 'logoutput'), cfg.get('main', 'loglevel'), reinit=True)
     logger.info("Started CLI search utility, version {}, loglevel {}".format(__version__, cfg.get('main', 'loglevel')))
 
-    try:
-        otp = OTPQuery(cfg)
-        dataset = otp.get_dataset()
+    if 'schedule_name' in args:
+        SuperScheduler(args, cfg, logger, schedule).process()
 
-        conv = dc.DatasetConverter(dataset)
-        if cfg.get('main', 'output').lower() == 'csv':
-            conv.print_csv(separator=cfg.get('main', 'csv separator'))
-        elif cfg.get('main', 'output').lower() == 'json':
-            conv.print_json()
-    except:
-        logger.critical("Unexpected error", exc_info=True)
-        print('exception')
-        sys.exit(255)
+    else:
+        try:
+            otp = OTPQuery(cfg)
+            dataset = otp.get_dataset()
+
+            conv = dc.DatasetConverter(dataset)
+            if cfg.get('main', 'output').lower() == 'csv':
+                conv.print_csv(separator=cfg.get('main', 'csv separator'))
+            elif cfg.get('main', 'output').lower() == 'json':
+                conv.print_json()
+        except:
+            logger.critical("Unexpected error", exc_info=True)
+            print('exception')
+            sys.exit(255)
 
     logger.info("Finished CLI search utility")
 
