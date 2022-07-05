@@ -5,6 +5,7 @@ import os
 import argparse
 import re
 import sys
+import time
 from pathlib import Path
 
 import lib_clisearch.clisearch_cfg as config
@@ -19,7 +20,6 @@ def get_args():
     parser = argparse.ArgumentParser(add_help=True,
                                      allow_abbrev=False,
                                      description='CLI Search utility')
-    subparsers = parser.add_subparsers()
     parser.add_argument('--config', '-c', default='clisearch.cfg', help='Configuration file')
     parser.add_argument('--ttl', type=int, help='Time to live request search')
     parser.add_argument('--tws', type=int, help='Start search time (epoch)')
@@ -31,19 +31,10 @@ def get_args():
     parser.add_argument('--output', choices=['csv', 'json'], help='Select output type')
     parser.add_argument('--query', type=str, required=True, help='OTL query text')
 
-    # schedule subparsers
-    schedule_parsers = {}
+    subparsers = parser.add_subparsers()
 
-    crontab_schedule_name = 'crontab'
-    crontab_parser = subparsers.add_parser(crontab_schedule_name)
-    schedule_parsers[crontab_schedule_name] = crontab_parser
-    crontab_parser.add_argument('--minute', type=str, help=f'Default \'*\'', default='*')
-    crontab_parser.add_argument('--hour', type=str, help=f'Default \'*\'', default='*')
-    crontab_parser.add_argument('--day_of_week', type=str, help=f'Default \'*\'', default='*')
-    crontab_parser.add_argument('--day_of_month', type=str, help=f'Default \'*\'', default='*')
-    crontab_parser.add_argument('--month_of_year', type=str, help=f'Default \'*\'', default='*')
-    crontab_parser.add_argument('--schedule_name', type=str, help=f"Schedule name; default '{crontab_schedule_name}'",
-                                default=crontab_schedule_name)
+    # schedule subparsers
+    schedule_parsers, required_one_off_schedules = SuperScheduler.create_schedule_subparsers(subparsers)
 
     # parser.add_argument('--ttl', default=60, type=int, help='Time to live request search')
     # parser.add_argument('--tws', default=0, type=int, help='Start search time (epoch)')
@@ -58,9 +49,8 @@ def get_args():
     # parser.add_argument('--query', type=str, required=True, help='OTL query text')
 
     args = parser.parse_args()
-    schedule = SuperScheduler.get_schedule(args, schedule_parsers)
 
-    return args, schedule
+    return args, schedule_parsers
 
 
 def get_config(args):
@@ -92,8 +82,44 @@ def get_config(args):
     return cfg
 
 
+def create_periodic_task(args, cfg, logger, schedule_parsers):
+
+    logger.info("Creating schedule periodic task with otl queue...")
+
+    SuperScheduler.COMPLEX_REST_HOST, SuperScheduler.COMPLEX_REST_PORT = cfg.get('main', 'host'), \
+                                                                         cfg.get('main', 'port')
+    SuperScheduler.USERNAME, SuperScheduler.PASSWORD = cfg.get('main', 'username'), cfg.get('main', 'password')
+    SuperScheduler.SUPER_SCHEDULER_URL, SuperScheduler.AUTH_URL = cfg.get('main', 'super_scheduler_url'), \
+                                                                  cfg.get('main', 'auth_url')
+
+    token = SuperScheduler.auth()
+
+    schedule_task = cfg.get('main', 'schedule_task')
+    task_args = [args.query,
+                 SuperScheduler.COMPLEX_REST_HOST + ':' + SuperScheduler.COMPLEX_REST_PORT,
+                 ]
+
+    for key, value in zip(('tws', 'twf', 'sid', 'ttl', 'tlast'), (0, 0, 999999, 100, 100)):
+        if args.__dict__[key]:
+            value = args.__dict__[key]
+        task_args += [value]
+    task_args += [SuperScheduler.USERNAME]
+
+    data = SuperScheduler.data_construction(task=schedule_task,
+                                            schedule_parsers=schedule_parsers,
+                                            task_args=task_args,
+                                            task_kwargs=None,
+                                            task_name=f'schedule_otl_clisearch_{time.time()}',
+                                            one_off=False,
+                                            required_one_off_schedules=None)
+
+    # print(data)
+    status_code = SuperScheduler.send_request(data, token, post=True)
+    return status_code
+
+
 def main():
-    args, schedule = get_args()
+    args, schedule_parsers = get_args()
     logger = cs_logger.get_logger('STDERR' if args.logoutput is None else args.logoutput,
                                   'CRITICAL' if args.loglevel is None else args.loglevel)
     # logger = cs_logger.get_logger(args.logoutput, args.loglevel)
@@ -118,8 +144,15 @@ def main():
     logger = cs_logger.get_logger(cfg.get('main', 'logoutput'), cfg.get('main', 'loglevel'), reinit=True)
     logger.info("Started CLI search utility, version {}, loglevel {}".format(__version__, cfg.get('main', 'loglevel')))
 
-    if 'schedule_name' in args:
-        SuperScheduler(args, cfg, logger, schedule).process()
+    logger.info(f"{set(schedule_parsers.keys())}")
+
+    schedule_key = False
+    for arg in sys.argv[1:]:
+        if arg in set(schedule_parsers.keys()):
+            schedule_key = True
+
+    if schedule_key:
+        create_periodic_task(args, cfg, logger, schedule_parsers)
 
     else:
         try:
