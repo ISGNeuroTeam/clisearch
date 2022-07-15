@@ -81,15 +81,15 @@ class SuperScheduler:
                 schedule_dict['name'] = schedule_name
                 preprocess_schedule(schedule_dict)
                 return schedule_dict
-        raise ValueError("No schedule or can't parse")
+        raise ValueError("No schedule or can't parse it, see documentation and examples")
 
     @classmethod
     def data_construction(cls,
-                          task: str,
+                          task: Optional[str],
+                          task_name: Optional[str],
                           schedule_parsers: dict,
                           task_args: Optional[list] = None,
                           task_kwargs: Optional[dict] = None,
-                          task_name: Optional[str] = None,
                           one_off: Optional[bool] = None,
                           required_one_off_schedules: Optional[list[str]] = None) -> dict:
         """
@@ -146,7 +146,10 @@ class SuperScheduler:
         if content is not None:
             cls.logger.info(f"Finish request with code {content.status_code}.")
             print("\nResult:")
-            cls.pretty_print(data_str2dict=content.text)
+            if isinstance(content.text, str):
+                cls.pretty_print(data_str2dict=content.text)
+            else:
+                print(content.text)
             return content.status_code
         else:
             raise ValueError("Finish request without content")
@@ -208,7 +211,7 @@ class SuperScheduler:
         task_parser.add_argument('-N', '--name', type=str, help='Periodic task (scheduled) name. Must be unique.')
         task_parser.add_argument('--args', type=str, nargs="*",
                                  help="Task args if necessary. Only use with argument '--task'. "
-                                      "Example: '--args value1 value2'")
+                                      "Example: '--args value1,value2,value3'")
         task_parser.add_argument('--kwargs', type=str, nargs="*",
                                  help="Task kwargs if necessary. Only use with argument '--task'. "
                                       "Example: '--kwargs arg1=value1 arg2=value2'")
@@ -221,7 +224,8 @@ class SuperScheduler:
     def create_parsers(cls):
         parser = argparse.ArgumentParser(
             description='SuperScheduler client.\n'
-                        'To see schedule args.'
+                        'To see schedule args.\n'
+                        "Use '--' to split positional arguments."
         )
 
         parser.add_argument('-U', '--username', type=str,
@@ -234,12 +238,12 @@ class SuperScheduler:
         parser.add_argument('--port', type=str, help=f'Port complex_rest. Default: \'{cls.COMPLEX_REST_PORT}\'.',
                             default=cls.COMPLEX_REST_PORT)
 
-        parser.add_argument('-C', '--create', action='store_true',
+        parser.add_argument('--create', action='store_true',
                             help="Create periodic task. Required argumets: '--task', '--name'. "
                                  "Optional argumets: '--args', '--kwargs', '--one_off'.")
-        parser.add_argument('-D', '--delete', action='store_true',
+        parser.add_argument('--delete', action='store_true',
                             help="Delete periodic task. Required arguments: '--name'.")
-        parser.add_argument('-G', '--get', action='store_true',
+        parser.add_argument('--get', action='store_true',
                             help='Get all available tasks and names of periodic tasks. Non required argumets.')
 
         subparsers = parser.add_subparsers()

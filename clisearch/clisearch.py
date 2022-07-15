@@ -105,11 +105,10 @@ def create_periodic_task(args, cfg, logger, schedule_parsers):
         task_args += [value]
     task_args += [SuperScheduler.USERNAME]
 
-    data = SuperScheduler.data_construction(task=schedule_task,
+    data = SuperScheduler.data_construction(task=schedule_task, task_name=f'schedule_otl_clisearch_{time.time()}',
                                             schedule_parsers=schedule_parsers,
                                             task_args=task_args,
                                             task_kwargs=None,
-                                            task_name=f'schedule_otl_clisearch_{time.time()}',
                                             one_off=False,
                                             required_one_off_schedules=None)
 
