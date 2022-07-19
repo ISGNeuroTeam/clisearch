@@ -95,22 +95,27 @@ def create_periodic_task(args, cfg, logger, schedule_parsers):
     token = SuperScheduler.auth()
 
     schedule_task = cfg.get('main', 'schedule_task')
+
+
     task_args = [args.query,
                  SuperScheduler.COMPLEX_REST_HOST + ':' + SuperScheduler.COMPLEX_REST_PORT,
                  ]
-
     for key, value in zip(('tws', 'twf', 'sid', 'ttl', 'tlast'), (0, 0, 999999, 100, 100)):
         if args.__dict__[key]:
             value = args.__dict__[key]
         task_args += [value]
     task_args += [SuperScheduler.USERNAME]
+    task_args = ','.join(task_args)  # list to str
 
-    data = SuperScheduler.data_construction(task=schedule_task, task_name=f'schedule_otl_clisearch_{time.time()}',
-                                            schedule_parsers=schedule_parsers,
-                                            task_args=task_args,
-                                            task_kwargs=None,
-                                            one_off=False,
-                                            required_one_off_schedules=None)
+    data = SuperScheduler.data_construction(
+        task=schedule_task,
+        task_name=f'schedule_otl_clisearch_{time.time()}',
+        schedule_parsers=schedule_parsers,
+        task_args=task_args,
+        task_kwargs=None,
+        one_off=False,
+        required_one_off_schedules=None
+    )
 
     # print(data)
     status_code = SuperScheduler.send_request(data, token, post=True)
