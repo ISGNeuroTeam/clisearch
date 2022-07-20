@@ -114,7 +114,8 @@ def create_periodic_task(args, cfg, logger, schedule_parsers):
         task_args=task_args,
         task_kwargs=None,
         one_off=False,
-        required_one_off_schedules=None
+        required_one_off_schedules=None,
+        is_required_schedule=True,
     )
 
     # print(data)
