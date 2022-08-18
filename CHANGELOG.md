@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2021-08-18
+### Added
+- readme in archive
+- changelog in archive
+
 ## [0.2.4] - 2021-06-28
 ### Fixed
 - CSV formatting issue
