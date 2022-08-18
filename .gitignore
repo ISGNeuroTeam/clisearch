@@ -133,3 +133,5 @@ build/
 venv/
 
 clisearch/ot_simple_connector/
+make_build/
+clisearch*.tar.gz
