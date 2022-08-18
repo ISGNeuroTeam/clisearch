@@ -50,8 +50,8 @@ make_build: dist venv
 	cp clisearch/clisearch.cfg make_build/$(PROJECT_NAME)/clisearch.cfg.example
 #	cp -r ./$(PROJECT_NAME)/* ./build/$(PROJECT_NAME)
 #	mv ./build/$(PROJECT_NAME)/benchmark.cfg ./build/$(PROJECT_NAME)/benchmark.cfg.example
-#	cp README.md build/$(PROJECT_NAME)/
-#	cp CHANGELOG.md build/$(PROJECT_NAME)/
+	cp README.md build/$(PROJECT_NAME)/
+	cp CHANGELOG.md build/$(PROJECT_NAME)/
 	cp LICENSE.md make_build/$(PROJECT_NAME)/
 
 dist: venv
