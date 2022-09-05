@@ -14,6 +14,7 @@ import lib_clisearch.dataset_converter as dc
 from lib_clisearch.query import OTPQuery
 from clisearch import __version__
 from lib_clisearch.super_scheduler.super_scheduler import SuperScheduler
+from lib_clisearch.super_scheduler.crontab import CrontabScheduleFormat
 
 
 def get_args():
@@ -30,11 +31,7 @@ def get_args():
     parser.add_argument('--logoutput', type=str, help='Logger output destination (STDERR, STDOUT, NULL or filename)')
     parser.add_argument('--output', choices=['csv', 'json'], help='Select output type')
     parser.add_argument('--query', type=str, required=True, help='OTL query text')
-
-    subparsers = parser.add_subparsers()
-
-    # schedule subparsers
-    schedule_parsers, required_one_off_schedules = SuperScheduler.create_schedule_subparsers(subparsers)
+    parser.add_argument('--crontab_line', type=str, required=False, help='OTL query text')
 
     # parser.add_argument('--ttl', default=60, type=int, help='Time to live request search')
     # parser.add_argument('--tws', default=0, type=int, help='Start search time (epoch)')
@@ -50,7 +47,7 @@ def get_args():
 
     args = parser.parse_args()
 
-    return args, schedule_parsers
+    return args
 
 
 def get_config(args):
@@ -82,24 +79,28 @@ def get_config(args):
     return cfg
 
 
-def create_periodic_task(args, cfg, logger, schedule_parsers):
+def create_periodic_task(args, cfg, logger, crontab_line):
 
     logger.info("Creating schedule periodic task with otl queue...")
 
-    SuperScheduler.COMPLEX_REST_HOST, SuperScheduler.COMPLEX_REST_PORT = cfg.get('main', 'host'), \
-                                                                         cfg.get('main', 'port')
-    SuperScheduler.USERNAME, SuperScheduler.PASSWORD = cfg.get('main', 'username'), cfg.get('main', 'password')
-    SuperScheduler.SUPER_SCHEDULER_URL, SuperScheduler.AUTH_URL = cfg.get('main', 'super_scheduler_url'), \
-                                                                  cfg.get('main', 'auth_url')
+    SuperScheduler.init_cls_variables(
+        auth_url=cfg.get('main', 'auth_url'), super_scheduler_url=cfg.get('main', 'super_scheduler_url'),
+        username=cfg.get('main', 'username'), password=cfg.get('main', 'password'),
+        host=cfg.get('main', 'host'), port=cfg.get('main', 'port'),
+    )
 
-    token = SuperScheduler.auth()
+    super_scheduler = SuperScheduler()
+
+    # # set token
+    super_scheduler.auth()
 
     schedule_task = cfg.get('main', 'schedule_task')
 
-
-    task_args = [args.query,
-                 SuperScheduler.COMPLEX_REST_HOST + ':' + SuperScheduler.COMPLEX_REST_PORT,
-                 ]
+    # create task data
+    task_args = [
+        args.query,
+        SuperScheduler.COMPLEX_REST_HOST + ':' + SuperScheduler.COMPLEX_REST_PORT,
+        ]
     for key, value in zip(('tws', 'twf', 'sid', 'ttl', 'tlast'), (0, 0, 999999, 100, 100)):
         if args.__dict__[key]:
             value = args.__dict__[key]
@@ -107,24 +108,28 @@ def create_periodic_task(args, cfg, logger, schedule_parsers):
     task_args += [SuperScheduler.USERNAME]
     task_args = ','.join(task_args)  # list to str
 
-    data = SuperScheduler.data_construction(
-        task=schedule_task,
-        task_name=f'schedule_otl_clisearch_{time.time()}',
-        schedule_parsers=schedule_parsers,
-        task_args=task_args,
-        task_kwargs=None,
-        one_off=False,
-        required_one_off_schedules=None,
-        is_required_schedule=True,
+    # create schedule
+    schedule_dict = CrontabScheduleFormat(crontab_line=crontab_line).__dict__
+    schedule_dict['name'] = 'crontab'
+
+    super_scheduler.new_data_construction(
+        task_args={
+            'task': schedule_task,
+            'name': f'schedule_otl_clisearch_{time.time()}',
+            'args': task_args,
+            'kwargs': {},
+            'one_off': False
+        },
+        schedule_args=schedule_dict,
+        required_one_off_schedules=['clocked'],
     )
 
-    # print(data)
-    status_code = SuperScheduler.send_request(data, token, post=True)
+    status_code = super_scheduler.send_request_to_super_scheduler(post=True)
     return status_code
 
 
 def main():
-    args, schedule_parsers = get_args()
+    args = get_args()
     logger = cs_logger.get_logger('STDERR' if args.logoutput is None else args.logoutput,
                                   'CRITICAL' if args.loglevel is None else args.loglevel)
     # logger = cs_logger.get_logger(args.logoutput, args.loglevel)
@@ -149,15 +154,8 @@ def main():
     logger = cs_logger.get_logger(cfg.get('main', 'logoutput'), cfg.get('main', 'loglevel'), reinit=True)
     logger.info("Started CLI search utility, version {}, loglevel {}".format(__version__, cfg.get('main', 'loglevel')))
 
-    logger.info(f"{set(schedule_parsers.keys())}")
-
-    schedule_key = False
-    for arg in sys.argv[1:]:
-        if arg in set(schedule_parsers.keys()):
-            schedule_key = True
-
-    if schedule_key:
-        create_periodic_task(args, cfg, logger, schedule_parsers)
+    if args.crontab_line:
+        create_periodic_task(args, cfg, logger, args.crontab_line)
 
     else:
         try:
